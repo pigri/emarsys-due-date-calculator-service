@@ -2,8 +2,8 @@ builder:
   build:
     cached: true
     dockerfile_path: Dockerfile.build
-duedate-api:
+emarsys-due-date-calculator-service:
   build:
     cached: true
-    image: pigri/duedate-api
+    image: pigri/emarsys-due-date-calculator-service
     dockerfile_path: Dockerfile

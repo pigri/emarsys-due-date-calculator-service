@@ -2,17 +2,19 @@
   steps:
   - type: serial
     steps:
-      - service: duedate-api
+      - service: emarsys-due-date-calculator-service
         command: nginx -T
       - service: builder
         command: sh -c "cd /build;make test OPENRESTY_PATH=/usr NGINX_PATH=sbin"
-- service: duedate-api
+- service: emarsys-due-date-calculator-service
   tag: "^(v[0-9][0-9]*\\.[0-9][0-9]*\\.[0-9][0-9]*)$"
   type: push
   image_tag: latest
-  image_name: duedate-api
-- service: duedate-api
+  image_name: emarsys-due-date-calculator-service
+  encrypted_dockercfg_path: dockercfg.encrypted
+- service: emarsys-due-date-calculator-service
   tag: "^(v[0-9][0-9]*\\.[0-9][0-9]*\\.[0-9][0-9]*)$"
   type: push
   image_tag: "{{.Branch}}"
-  image_name: duedate-api
+  image_name: emarsys-due-date-calculator-service
+  encrypted_dockercfg_path: dockercfg.encrypted
