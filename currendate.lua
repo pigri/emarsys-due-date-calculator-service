@@ -1,6 +1,6 @@
 local date = os.date
-local inputdate = tostring("2019-11-08 14:00:00")
-local turnaround = tonumber(41) * 3600
+local inputdate = tostring("2019-11-08 11:00:00")
+local turnaround = tonumber(39.41) * 3600
 
 function DateParsing(date)
   local pattern = "(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)"
@@ -15,9 +15,9 @@ end
 function WeekendCheck(timestamp)
   local weekday = date("%w", timestamp)
   if (weekday == "6") then
-    return true
+    return 2*86400
   else
-    return false
+    return 0
   end
 end
 
@@ -26,29 +26,24 @@ local year = date("%Y", daystart)
 local month = date("%m", daystart)
 local day = date("%d", daystart)
 local nextday_step = 57600
-next_day = os.time({day=day,month=month,year=year,hour=17,min=00,sec=00})
+Nextday = os.time({day=day,month=month,year=year,hour=17,min=00,sec=00})
 local working_step = 28800
-remaining = turnaround - ( next_day - daystart )
+Remaining = turnaround - ( Nextday - daystart )
 
-if(remaining <= 0 ) then
-  print(HumanDate(next_day))
+if(Remaining <= 0 ) then
+  print(HumanDate(Nextday))
 else
   repeat
-    next_day = next_day + nextday_step
-    if(WeekendCheck(next_day) == true ) then
-      next_day = next_day + (2*86400)
-    end
-    if (remaining > working_step) then
-      remaining = remaining - working_step
+    Nextday = Nextday + nextday_step
+    Nextday = Nextday + WeekendCheck(Nextday)
+    if (Remaining > working_step) then
+      Remaining = Remaining - working_step
     else
-      next_day = next_day + nextday_step + remaining
-      if(WeekendCheck(next_day) == true ) then
-        next_day = next_day + (2*86400)
-        remaining = 0
-      end
-      remaining = 0
+      Nextday = Nextday + nextday_step + Remaining
+      Nextday = Nextday + WeekendCheck(Nextday)
+      Remaining = 0
     end
-    next_day = next_day + working_step
-  until (remaining <= 0)
-    print(HumanDate(next_day))
+    Nextday = Nextday + working_step
+  until (Remaining <= 0)
+    print(HumanDate(Nextday))
 end
