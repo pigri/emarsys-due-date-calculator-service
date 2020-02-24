@@ -10,11 +10,11 @@
   tag: "^(v[0-9][0-9]*\\.[0-9][0-9]*\\.[0-9][0-9]*)$"
   type: push
   image_tag: latest
-  image_name: emarsys-due-date-calculator-service
+  image_name: pigri/emarsys-due-date-calculator-service
   encrypted_dockercfg_path: dockercfg.encrypted
 - service: emarsys-due-date-calculator-service
   tag: "^(v[0-9][0-9]*\\.[0-9][0-9]*\\.[0-9][0-9]*)$"
   type: push
   image_tag: "{{.Branch}}"
-  image_name: emarsys-due-date-calculator-service
+  image_name: pigri/emarsys-due-date-calculator-service
   encrypted_dockercfg_path: dockercfg.encrypted
