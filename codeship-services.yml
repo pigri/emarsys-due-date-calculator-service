@@ -1,0 +1,9 @@
+builder:
+  build:
+    cached: true
+    dockerfile_path: Dockerfile.build
+duedate-api:
+  build:
+    cached: true
+    image: pigri/duedate-api
+    dockerfile_path: Dockerfile

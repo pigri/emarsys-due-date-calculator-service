@@ -1,0 +1,18 @@
+- type: parallel
+  steps:
+  - type: serial
+    steps:
+      - service: duedate-api
+        command: nginx -T
+      - service: builder
+        command: sh -c "cd /build;make test OPENRESTY_PATH=/usr NGINX_PATH=sbin"
+- service: duedate-api
+  tag: "^(v[0-9][0-9]*\\.[0-9][0-9]*\\.[0-9][0-9]*)$"
+  type: push
+  image_tag: latest
+  image_name: duedate-api
+- service: duedate-api
+  tag: "^(v[0-9][0-9]*\\.[0-9][0-9]*\\.[0-9][0-9]*)$"
+  type: push
+  image_tag: "{{.Branch}}"
+  image_name: duedate-api

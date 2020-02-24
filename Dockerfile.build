@@ -1,0 +1,24 @@
+FROM openresty/openresty:1.15.8.2-7-alpine-fat
+
+RUN apk add --no-cache --virtual .build-deps \
+  git \
+  gcc \
+  libc-dev \
+  make \
+  openssl-dev \
+  pcre-dev \
+  zlib-dev \
+  linux-headers \
+  curl \
+  gnupg \
+  gd-dev \
+  geoip-dev \
+  perl-dev \
+  luajit-dev \
+  redis \
+  bind-tools \
+  perl-test-nginx \
+  && PERL_MM_USE_DEFAULT=1 cpan install Test::Nginx
+ADD src /build/src
+ADD t /build/t
+ADD Makefile /build/
