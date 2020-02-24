@@ -42,6 +42,7 @@ else
       Nextday = Nextday + nextday_step + Remaining
       Nextday = Nextday + WeekendCheck(Nextday)
       Remaining = 0
+      break
     end
     Nextday = Nextday + working_step
   until (Remaining <= 0)
