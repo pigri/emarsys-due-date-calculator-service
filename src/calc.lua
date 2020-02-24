@@ -1,50 +1,133 @@
-local date = os.date
-local inputdate = tostring("2019-11-08 11:00:00")
-local turnaround = tonumber(39.41) * 3600
-
-function DateParsing(date)
-  local pattern = "(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)"
-  local year, month, day, hour, min, sec = date:match(pattern)
-  return os.time({day=day,month=month,year=year,hour=hour,min=min,sec=sec})
+local ok,json = pcall(require, "cjson")
+if not ok then
+    error("cjson module required")
 end
 
-function HumanDate(timestamp)
+local date = os.date
+local one_hour = 3600
+
+local function humanDate(timestamp)
   return date("%Y-%m-%d %H:%M:%S", timestamp)
 end
 
-function WeekendCheck(timestamp)
-  local weekday = date("%w", timestamp)
+local function apiResponse(response)
+    local status = 200
+    ngx.say(json.encode({data = response}))
+    return ngx.exit(status)
+end
+
+local function errorResponse(status, message)
+    ngx.status = status
+    ngx.say(json.encode({ error = { status = status, message = message } }))
+    return ngx.exit(status)
+end
+
+local function parseDate(datetime)
+  return datetime:match("(%d%d%d%d)-(%d%d)-(%d%d) (%d%d):(%d%d):(%d%d)")
+end
+
+local function toTimeStamp(datetime)
+  local year, month, day, hour, min, sec = parseDate(datetime)
+  if year == nil then
+    errorResponse(400, 'DATE format is invalid')
+  end
+  return os.time({day=day,month=month,year=year,hour=hour,min=min,sec=sec})
+end
+
+local function weekendTime(timestamp)
+  local weekday = os.date("%w", timestamp)
   if (weekday == "6") then
-    return 2*86400
-  else
-    return 0
+    return 48 * one_hour
+  end
+  return 0
+end
+
+local function getN(args)
+    local counter = 0
+    for key, val in pairs(args) do
+        counter = counter + 1
+    end
+    return counter
+end
+
+local function argumentsValidator(args)
+    if not args then
+      errorResponse(400,'Parameters are not found')
+    end
+
+    if getN(args) == 0 then
+      errorResponse(400,'Parameters are not found')
+    end
+
+    if getN(args) < 1 then
+      errorResponse(400,'Parameters are not found')
+    end
+
+    if args['issue_start'] == nil then
+      errorResponse(400, 'ISSUE_START parameter is missing')
+    end
+
+    if args['turnaround'] == nil then
+      errorResponse(400, 'TURNAROUND parameter is missing')
+    end
+end
+
+local function inputDateTimeValidator(datetime)
+  local timestamp = toTimeStamp(datetime)
+  local weekday = date("%w", timestamp)
+  local hours = date("%H", timestamp)
+  if weekday == "0" then
+    errorResponse(400, 'Out of working day')
+  elseif weekday == "6" then
+    errorResponse(400, 'Out of working day')
+  elseif tonumber(hours) < 9 then
+    errorResponse(400, 'Out of working hour')
+  elseif tonumber(hours) > 17 then
+    errorResponse(400, 'Out of working hour')
   end
 end
 
-local daystart = DateParsing(inputdate)
-local year = date("%Y", daystart)
-local month = date("%m", daystart)
-local day = date("%d", daystart)
-local nextday_step = 57600
-Nextday = os.time({day=day,month=month,year=year,hour=17,min=00,sec=00})
-local working_step = 28800
-Remaining = turnaround - ( Nextday - daystart )
+local function calculateDueDate(datetime, turnaround)
+  local timestamp = toTimeStamp(datetime)
+  local year = date("%Y", timestamp)
+  local month = date("%m", timestamp)
+  local day = date("%d", timestamp)
+  local turnaround_seconds = turnaround * one_hour
+  local workdaytime = 8 * one_hour
+  local overnight = 16 * one_hour
+  local duedate = os.time({day=day,month=month,year=year,hour=17,min=00,sec=00})
+  local remaining = turnaround_seconds - ( duedate - timestamp )
 
-if(Remaining <= 0 ) then
-  print(HumanDate(Nextday))
-else
-  repeat
-    Nextday = Nextday + nextday_step
-    Nextday = Nextday + WeekendCheck(Nextday)
-    if (Remaining > working_step) then
-      Remaining = Remaining - working_step
-    else
-      Nextday = Nextday + nextday_step + Remaining
-      Nextday = Nextday + WeekendCheck(Nextday)
-      Remaining = 0
-      break
-    end
-    Nextday = Nextday + working_step
-  until (Remaining <= 0)
-    print(HumanDate(Nextday))
+  if(remaining == 0 ) then
+      return duedate
+  else
+    repeat
+      duedate = duedate + overnight
+      duedate = duedate + weekendTime(duedate)
+      if (remaining >= workdaytime) then
+        remaining = remaining - workdaytime
+      else
+        duedate = duedate + remaining
+        duedate = duedate + weekendTime(duedate)
+        remaining = 0
+        break
+      end
+      duedate = duedate + workdaytime
+    until (remaining == 0)
+      return duedate
+  end
 end
+
+local args = ngx.req.get_uri_args()
+argumentsValidator(args)
+
+local datetime = tostring(ngx.unescape_uri(args['issue_start']))
+local turnaround = tonumber(ngx.unescape_uri(args['turnaround']))
+if turnaround == nil then
+  errorResponse(400, 'TURNAROUND is not a number')
+end
+
+inputDateTimeValidator(datetime)
+
+local duedate = calculateDueDate(datetime, turnaround)
+apiResponse({duedate = humanDate(duedate)})
