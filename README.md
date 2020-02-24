@@ -67,8 +67,8 @@ make test
 #### If just try local
 
 ```
-docker pull pigri/duedate-api:latest
-docker run -p 8080:8080 -d duedate-api
+docker pull pigri/emarsys-due-date-calculator-service:latest
+docker run -p 8080:8080 -d emarsys-due-date-calculator-service
 ```
 
 ### Using
